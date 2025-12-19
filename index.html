@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ADHDesk - Sliding Desk Puzzle</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="description" content="A fun sliding puzzle game with office desk items">
+    <meta name="theme-color" content="#8B6F47">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="ADHDesk">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Apple Touch Icon -->
+    <link rel="apple-touch-icon" href="icon-192.png">
+    
+    <link href="https://fonts.googleapis.com/css2?family=VT323&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --desk-wood: #8B6F47;
+            --desk-dark: #5C4A2F;
+            --paper-white: #F5F1E8;
+            --ink-black: #2C2416;
+            --accent-green: #3D7C47;
+            --accent-red: #C14533;
+            --grid-gap: 4px;
+            --tile-size: 70px;
+            --font-1x1: 35px;
+            --font-1x2: 35px;
+            --font-2x2: 49px;
+            --font-1x3: 42px;
+        }
+
+        @media (max-width: 1100px) {
+            :root {
+                --tile-size: 60px;
+                --grid-gap: 3px;
+            }
+        }
+
+        @media (max-width: 950px) {
+            :root {
+                --tile-size: 50px;
+                --grid-gap: 3px;
+            }
+        }
+
+        @media (max-width: 800px) {
+            :root {
+                --tile-size: 45px;
+                --grid-gap: 2px;
+            }
+        }
+
+        @media (max-width: 700px) {
+            :root {
+                --tile-size: 40px;
+                --grid-gap: 2px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            :root {
+                --tile-size: 35px;
+                --grid-gap: 2px;
+            }
+        }
+
+        @media (max-width: 520px) {
+            :root {
+                --tile-size: 30px;
+                --grid-gap: 2px;
+            }
+        }
+
+        @media (max-width: 450px) {
+            :root {
+                --tile-size: 26px;
+                --grid-gap: 1px;
+            }
+        }
+
+        body {
+            background: linear-gradient(135deg, #E8DCC4 0%, #C9B99A 100%);
+            font-family: 'Courier Prime', monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 10px;
+            overflow-x: hidden;
+            margin: 0;
+        }
+
+        .container {
+            background: var(--desk-wood);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 
+                0 10px 40px rgba(0,0,0,0.3),
+                inset 0 2px 4px rgba(255,255,255,0.2),
+                inset 0 -2px 4px rgba(0,0,0,0.2);
+            position: relative;
+            max-width: 100%;
+            max-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        @media (max-width: 700px) {
+            .container {
+                padding: 15px;
+            }
+        }
+
+        @media (max-width: 450px) {
+            .container {
+                padding: 10px;
+            }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 700px) {
+            .header {
+                margin-bottom: 15px;
+            }
+        }
+
+        @media (max-width: 450px) {
+            .header {
+                margin-bottom: 10px;
+            }
+        }
+
+        h1 {
+            font-family: 'VT323', monospace;
+            font-size: 3.5em;
+            color: var(--paper-white);
+            text-shadow: 
+                3px 3px 0 var(--desk-dark),
+                4px 4px 8px rgba(0,0,0,0.5);
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 700px) {
+            h1 {
+                font-size: 3em;
+            }
+        }
+
+        @media (max-width: 450px) {
+            h1 {
+                font-size: 2.5em;
+                margin-bottom: 5px;
+            }
+        }
+
+        .subtitle {
+            font-size: 0.9em;
+            color: var(--paper-white);
+            opacity: 0.8;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        @media (max-width: 450px) {
+            .subtitle {
+                font-size: 0.75em;
+            }
+        }
+
+        .desk-grid {
+            display: grid;
+            grid-template-columns: repeat(13, var(--tile-size));
+            grid-template-rows: repeat(6, var(--tile-size));
+            gap: var(--grid-gap);
+            background: var(--desk-dark);
+            padding: 8px;
+            border-radius: 4px;
+            box-shadow: inset 0 4px 8px rgba(0,0,0,0.4);
+            position: relative;
+            overflow: visible;
+        }
+
+        @media (max-width: 700px) {
+            .desk-grid {
+                padding: 6px;
+            }
+        }
+
+        @media (max-width: 450px) {
+            .desk-grid {
+                padding: 4px;
+            }
+        }
+
+        .tile {
+            background: var(--paper-white);
+            border: 2px solid var(--ink-black);
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--font-1x1);
+            color: var(--ink-black);
+            cursor: grab;
+            transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+            position: absolute;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+            box-shadow: 
+                2px 2px 4px rgba(0,0,0,0.3),
+                inset 0 1px 0 rgba(255,255,255,0.8);
+        }
+
+        @media (max-width: 800px) {
+            .tile {
+                border-width: 1.5px;
+            }
+        }
+
+        @media (max-width: 450px) {
+            .tile {
+                border-width: 1px;
+                border-radius: 2px;
+            }
+        }
+
+        .tile.size-1x1 {
+            width: var(--tile-size);
+            height: var(--tile-size);
+        }
+
+        .tile.size-1x2 {
+            width: var(--tile-size);
+            height: calc(var(--tile-size) * 2 + var(--grid-gap));
+            font-size: var(--font-1x2);
+        }
+
+        .tile.size-2x1 {
+            width: calc(var(--tile-size) * 2 + var(--grid-gap));
+            height: var(--tile-size);
+            font-size: var(--font-1x2);
+        }
+
+        .tile.size-2x2 {
+            width: calc(var(--tile-size) * 2 + var(--grid-gap));
+            height: calc(var(--tile-size) * 2 + var(--grid-gap));
+            font-size: var(--font-2x2);
+        }
+
+        .tile.size-1x3 {
+            width: var(--tile-size);
+            height: calc(var(--tile-size) * 3 + var(--grid-gap) * 2);
+            font-size: var(--font-1x3);
+        }
+
+        .tile:hover {
+            transform: scale(1.05);
+            box-shadow: 
+                3px 3px 8px rgba(0,0,0,0.4),
+                inset 0 1px 0 rgba(255,255,255,0.8);
+            z-index: 10;
+        }
+
+        .tile:active {
+            cursor: grabbing;
+            transform: scale(1.08);
+        }
+
+        .tile.dragging {
+            opacity: 0.7;
+            z-index: 100;
+            cursor: grabbing;
+        }
+
+        .tile.sliding {
+            transition: all 0.25s cubic-bezier(0.4, 0.0, 0.2, 1);
+        }
+
+        .empty-tile {
+            background: rgba(0,0,0,0.1);
+            border: 2px dashed rgba(0,0,0,0.2);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .empty-tile:hover {
+            background: rgba(0,0,0,0.15);
+            transform: none;
+        }
+
+        .moves-counter {
+            text-align: center;
+            margin-top: 15px;
+            font-family: 'VT323', monospace;
+            font-size: 1.8em;
+            color: var(--paper-white);
+            text-shadow: 2px 2px 0 var(--desk-dark);
+        }
+
+        @media (max-width: 700px) {
+            .moves-counter {
+                margin-top: 12px;
+                font-size: 1.6em;
+            }
+        }
+
+        @media (max-width: 450px) {
+            .moves-counter {
+                margin-top: 10px;
+                font-size: 1.4em;
+            }
+        }
+
+        .reset-btn {
+            display: block;
+            margin: 15px auto 0;
+            padding: 12px 30px;
+            background: var(--accent-green);
+            color: var(--paper-white);
+            border: 3px solid var(--ink-black);
+            border-radius: 4px;
+            font-family: 'VT323', monospace;
+            font-size: 1.5em;
+            cursor: pointer;
+            box-shadow: 3px 3px 0 var(--ink-black);
+            transition: all 0.15s;
+        }
+
+        @media (max-width: 700px) {
+            .reset-btn {
+                margin-top: 12px;
+                padding: 10px 25px;
+                font-size: 1.3em;
+            }
+        }
+
+        @media (max-width: 450px) {
+            .reset-btn {
+                margin-top: 10px;
+                padding: 8px 20px;
+                font-size: 1.2em;
+                border-width: 2px;
+                box-shadow: 2px 2px 0 var(--ink-black);
+            }
+        }
+
+        .reset-btn:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 5px 5px 0 var(--ink-black);
+        }
+
+        @media (max-width: 450px) {
+            .reset-btn:hover {
+                transform: translate(-1px, -1px);
+                box-shadow: 3px 3px 0 var(--ink-black);
+            }
+        }
+
+        .reset-btn:active {
+            transform: translate(1px, 1px);
+            box-shadow: 2px 2px 0 var(--ink-black);
+        }
+
+        @media (max-width: 450px) {
+            .reset-btn:active {
+                box-shadow: 1px 1px 0 var(--ink-black);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .container {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .tile {
+            animation: fadeIn 0.3s ease-out backwards;
+        }
+
+        .tile:nth-child(odd) {
+            animation-delay: 0.02s;
+        }
+
+        .tile:nth-child(even) {
+            animation-delay: 0.04s;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>ADHDesk</h1>
+            <div class="subtitle">// SLIDING DESK PUZZLE //</div>
+        </div>
+        
+        <div class="desk-grid" id="deskGrid"></div>
+        
+        <div class="moves-counter">MOVES: <span id="moveCount">0</span></div>
+        
+        <button class="reset-btn" onclick="resetGame()">SHUFFLE</button>
+    </div>
+
+    <script>
+        const ROWS = 6;
+        const COLS = 13;
+        let TILE_SIZE = 70;
+        let GAP = 4;
+        
+        // Office desk objects organized by tile size
+        const OBJECTS_1x1 = [
+            '📎', // paper clip
+            '📌', // push pin
+            '📍', // round pushpin
+            '🔋', // battery
+            '🔌', // plug
+            '💡', // light bulb
+            '💾', // floppy disk
+            '📀', // CD
+            '🗂️', // card index dividers
+            '📇', // card index
+            '🖇️', // linked paperclips
+            '✂️', // scissors
+            '🔍', // magnifying glass
+            '🔎', // magnifying glass right
+            '🔐', // locked with key
+            '🔒', // locked
+            '🔓', // unlocked
+            '🔑', // key
+            '🗝️', // old key
+            '⚙️', // gear
+            '🔗', // link
+            '🧷', // safety pin
+            '🪢', // knot
+            '🧵', // thread
+            '🪡', // sewing needle
+            '🧲', // magnet
+            '🎯', // target
+            '🏷️', // label
+            '🗑️', // wastebasket
+        ];
+        
+        const OBJECTS_1x2 = [
+            '✏️', // pencil
+            '🖊️', // pen
+            '✒️', // pen nib
+            '🖍️', // crayon
+            '🖌️', // paintbrush
+        ];
+        
+        const OBJECTS_1x3 = [
+            '📏', // ruler
+        ];
+        
+        const OBJECTS_2x2 = [
+            '🖱️', // mouse
+            '🧃', // juice box
+            '☕', // coffee
+            '🍵', // tea
+            '🥤', // cup with straw
+            '📱', // phone
+            '⌚', // watch
+            '⌨️', // keyboard
+            '📊', // chart
+            '📈', // graph
+            '📋', // clipboard
+            '📝', // memo
+            '📄', // document
+            '📃', // page
+            '📑', // bookmark tabs
+            '📁', // folder
+            '📂', // open folder
+            '🗓️', // calendar
+            '📆', // calendar
+            '📅', // calendar
+            '📮', // postbox
+            '📪', // mailbox
+            '📬', // mailbox with mail
+            '📭', // mailbox no mail
+            '🗳️', // ballot box
+            '🔨', // hammer
+            '🪛', // screwdriver
+            '🔧', // wrench
+            '🗜️', // clamp
+            '⚖️', // balance scale
+            '⛓️', // chains
+            '💼', // briefcase
+            '📦', // package
+            '🪣', // bucket
+            '🧼', // soap
+            '🧽', // sponge
+            '🧹', // broom
+            '📐', // triangular ruler
+        ];
+        
+        let tiles = [];
+        let grid = [];
+        let emptySpaces = [];
+        let moves = 0;
+        let draggedTile = null;
+        let dragStartX = 0;
+        let dragStartY = 0;
+        let isDragging = false;
+        let lastClickTime = 0;
+        let lastClickedTile = null;
+        let lastTapTime = 0;
+        let lastTappedTile = null;
+
+        function handleDoubleClick(e) {
+            const tile = e.currentTarget;
+            const tileWidth = parseInt(tile.dataset.width);
+            const tileHeight = parseInt(tile.dataset.height);
+            
+            // Only allow rotation for 1x2 tiles
+            if ((tileWidth === 1 && tileHeight === 2) || (tileWidth === 2 && tileHeight === 1)) {
+                const tileRow = parseInt(tile.dataset.row);
+                const tileCol = parseInt(tile.dataset.col);
+                
+                // Check if rotation is possible
+                const canRotate = checkRotationPossible(tileRow, tileCol, tileWidth, tileHeight);
+                if (canRotate) {
+                    rotateTile(tile, tileRow, tileCol, tileWidth, tileHeight);
+                }
+            }
+        }
+
+        // Touch event handlers for mobile/tablet support
+        function handleTouchStart(e) {
+            const tile = e.currentTarget;
+            const touch = e.touches[0];
+            
+            // Check for double-tap
+            const now = Date.now();
+            const tapGap = now - lastTapTime;
+            
+            if (tapGap < 300 && lastTappedTile === tile) {
+                // Double tap detected - trigger rotation
+                e.preventDefault();
+                handleDoubleClick({ currentTarget: tile });
+                lastTapTime = 0;
+                lastTappedTile = null;
+                return;
+            }
+            
+            lastTapTime = now;
+            lastTappedTile = tile;
+            
+            // Start drag
+            draggedTile = tile;
+            isDragging = true;
+            dragStartX = touch.clientX;
+            dragStartY = touch.clientY;
+            draggedTile.classList.add('dragging');
+        }
+
+        function handleTouchMove(e) {
+            if (!isDragging || !draggedTile) return;
+            e.preventDefault();
+            
+            const touch = e.touches[0];
+            const deltaX = touch.clientX - dragStartX;
+            const deltaY = touch.clientY - dragStartY;
+            
+            // Apply transform to show dragging feedback
+            draggedTile.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+        }
+
+        function handleTouchEnd(e) {
+            if (!isDragging || !draggedTile) return;
+            e.preventDefault();
+            
+            const touch = e.changedTouches[0];
+            const deltaX = touch.clientX - dragStartX;
+            const deltaY = touch.clientY - dragStartY;
+            const threshold = 10;
+            
+            const tileRow = parseInt(draggedTile.dataset.row);
+            const tileCol = parseInt(draggedTile.dataset.col);
+            const tileWidth = parseInt(draggedTile.dataset.width);
+            const tileHeight = parseInt(draggedTile.dataset.height);
+            
+            // Determine drag direction based on total movement from start to end
+            let direction = null;
+            let moved = false;
+            
+            const absDeltaX = Math.abs(deltaX);
+            const absDeltaY = Math.abs(deltaY);
+            
+            // If dragged beyond threshold in any direction
+            if (absDeltaX > threshold || absDeltaY > threshold) {
+                // Determine primary and secondary directions
+                let primaryDir, secondaryDir;
+                
+                if (absDeltaX > absDeltaY) {
+                    primaryDir = deltaX > 0 ? 'right' : 'left';
+                    secondaryDir = deltaY > 0 ? 'down' : 'up';
+                } else {
+                    primaryDir = deltaY > 0 ? 'down' : 'up';
+                    secondaryDir = deltaX > 0 ? 'right' : 'left';
+                }
+                
+                // Try primary direction first
+                let validMove = canMoveInDirection(tileRow, tileCol, tileWidth, tileHeight, primaryDir);
+                if (validMove) {
+                    direction = primaryDir;
+                } else if (absDeltaX > threshold && absDeltaY > threshold) {
+                    // If diagonal drag and primary blocked, try secondary
+                    validMove = canMoveInDirection(tileRow, tileCol, tileWidth, tileHeight, secondaryDir);
+                    if (validMove) {
+                        direction = secondaryDir;
+                    }
+                }
+            }
+            
+            // Try to move in the determined direction
+            if (direction) {
+                const validMove = canMoveInDirection(tileRow, tileCol, tileWidth, tileHeight, direction);
+                if (validMove) {
+                    // Reset transform before moving
+                    draggedTile.style.transform = '';
+                    moveTile(draggedTile, validMove.newRow, validMove.newCol, tileRow, tileCol, tileWidth, tileHeight);
+                    moved = true;
+                }
+            }
+            
+            // Only reset transform if move didn't happen
+            if (!moved) {
+                draggedTile.style.transform = '';
+            }
+            
+            draggedTile.classList.remove('dragging');
+            draggedTile = null;
+            isDragging = false;
+        }
+
+        function checkRotationPossible(row, col, width, height) {
+            // Calculate new dimensions after rotation
+            const newWidth = height;
+            const newHeight = width;
+            
+            // Try all possible positions where the rotated tile could be placed
+            // The tile could rotate while staying anchored at different corners
+            
+            const possiblePositions = [];
+            
+            // Keep top-left corner (original position)
+            if (row + newHeight <= ROWS && col + newWidth <= COLS) {
+                possiblePositions.push({ row: row, col: col });
+            }
+            
+            // Keep top-right corner
+            const topRightRow = row;
+            const topRightCol = col + width - newWidth;
+            if (topRightRow >= 0 && topRightRow + newHeight <= ROWS && 
+                topRightCol >= 0 && topRightCol + newWidth <= COLS) {
+                possiblePositions.push({ row: topRightRow, col: topRightCol });
+            }
+            
+            // Keep bottom-left corner
+            const bottomLeftRow = row + height - newHeight;
+            const bottomLeftCol = col;
+            if (bottomLeftRow >= 0 && bottomLeftRow + newHeight <= ROWS && 
+                bottomLeftCol >= 0 && bottomLeftCol + newWidth <= COLS) {
+                possiblePositions.push({ row: bottomLeftRow, col: bottomLeftCol });
+            }
+            
+            // Keep bottom-right corner
+            const bottomRightRow = row + height - newHeight;
+            const bottomRightCol = col + width - newWidth;
+            if (bottomRightRow >= 0 && bottomRightRow + newHeight <= ROWS && 
+                bottomRightCol >= 0 && bottomRightCol + newWidth <= COLS) {
+                possiblePositions.push({ row: bottomRightRow, col: bottomRightCol });
+            }
+            
+            // Check each possible position
+            for (const pos of possiblePositions) {
+                let canFit = true;
+                
+                for (let r = pos.row; r < pos.row + newHeight; r++) {
+                    for (let c = pos.col; c < pos.col + newWidth; c++) {
+                        // Skip if this space is part of current tile
+                        if (r >= row && r < row + height && c >= col && c < col + width) {
+                            continue;
+                        }
+                        
+                        // Check if this space is empty
+                        const isEmpty = emptySpaces.some(empty => empty.row === r && empty.col === c);
+                        if (!isEmpty) {
+                            canFit = false;
+                            break;
+                        }
+                    }
+                    if (!canFit) break;
+                }
+                
+                if (canFit) {
+                    return pos; // Return the position where it can rotate
+                }
+            }
+            
+            return null;
+        }
+
+        function rotateTile(tile, oldRow, oldCol, oldWidth, oldHeight) {
+            const newWidth = oldHeight;
+            const newHeight = oldWidth;
+            
+            // Find where the tile should be positioned after rotation
+            const newPos = checkRotationPossible(oldRow, oldCol, oldWidth, oldHeight);
+            if (!newPos) return;
+            
+            const newRow = newPos.row;
+            const newCol = newPos.col;
+            
+            tile.classList.add('sliding');
+            
+            // Update tile size class
+            tile.classList.remove(`size-${oldWidth}x${oldHeight}`);
+            tile.classList.add(`size-${newWidth}x${newHeight}`);
+            
+            // Update tile position
+            updateTilePosition(tile, newRow, newCol);
+            
+            // Update tile data attributes
+            tile.dataset.width = newWidth;
+            tile.dataset.height = newHeight;
+            
+            // Update tile data in tiles array
+            const tileData = tiles.find(t => t.element === tile);
+            if (tileData) {
+                tileData.row = newRow;
+                tileData.col = newCol;
+                tileData.width = newWidth;
+                tileData.height = newHeight;
+            }
+            
+            // Update empty spaces
+            const newEmptySpaces = [];
+            
+            // Add spaces that are no longer covered by the tile
+            for (let r = oldRow; r < oldRow + oldHeight; r++) {
+                for (let c = oldCol; c < oldCol + oldWidth; c++) {
+                    // If this space is not covered by rotated tile, it becomes empty
+                    if (!(r >= newRow && r < newRow + newHeight && c >= newCol && c < newCol + newWidth)) {
+                        newEmptySpaces.push({ row: r, col: c });
+                    }
+                }
+            }
+            
+            // Keep empty spaces that aren't now covered by the rotated tile
+            for (const empty of emptySpaces) {
+                const coveredByRotated = empty.row >= newRow && empty.row < newRow + newHeight &&
+                                        empty.col >= newCol && empty.col < newCol + newWidth;
+                const wasInOriginal = empty.row >= oldRow && empty.row < oldRow + oldHeight &&
+                                     empty.col >= oldCol && empty.col < oldCol + oldWidth;
+                
+                if (!coveredByRotated && !wasInOriginal) {
+                    newEmptySpaces.push(empty);
+                }
+            }
+            
+            emptySpaces = newEmptySpaces;
+            
+            moves++;
+            updateMoveCount();
+            
+            setTimeout(() => {
+                tile.classList.remove('sliding');
+            }, 250);
+        }
+
+        function getRandomObject(width, height) {
+            let objectArray;
+            
+            if (width === 1 && height === 1) {
+                objectArray = OBJECTS_1x1;
+            } else if (width === 1 && height === 2) {
+                objectArray = OBJECTS_1x2;
+            } else if (width === 1 && height === 3) {
+                objectArray = OBJECTS_1x3;
+            } else if (width === 2 && height === 2) {
+                objectArray = OBJECTS_2x2;
+            } else {
+                // Fallback to 1x1 objects
+                objectArray = OBJECTS_1x1;
+            }
+            
+            return objectArray[Math.floor(Math.random() * objectArray.length)];
+        }
+
+        function initGrid() {
+            // Initialize empty grid
+            grid = Array(ROWS).fill(null).map(() => Array(COLS).fill(false));
+        }
+
+        function canPlaceTile(row, col, width, height) {
+            if (row + height > ROWS || col + width > COLS) return false;
+            
+            for (let r = row; r < row + height; r++) {
+                for (let c = col; c < col + width; c++) {
+                    if (grid[r][c]) return false;
+                }
+            }
+            return true;
+        }
+
+        function markGridSpace(row, col, width, height, value) {
+            for (let r = row; r < row + height; r++) {
+                for (let c = col; c < col + width; c++) {
+                    grid[r][c] = value;
+                }
+            }
+        }
+
+        function findRandomPlacement(width, height, maxAttempts = 100) {
+            for (let attempt = 0; attempt < maxAttempts; attempt++) {
+                const row = Math.floor(Math.random() * (ROWS - height + 1));
+                const col = Math.floor(Math.random() * (COLS - width + 1));
+                
+                if (canPlaceTile(row, col, width, height)) {
+                    return { row, col };
+                }
+            }
+            return null;
+        }
+
+        function createTile(row, col, width, height, emoji) {
+            const tile = document.createElement('div');
+            tile.className = `tile size-${width}x${height}`;
+            tile.textContent = emoji;
+            tile.dataset.row = row;
+            tile.dataset.col = col;
+            tile.dataset.width = width;
+            tile.dataset.height = height;
+            
+            // Mouse events
+            tile.addEventListener('mousedown', handleMouseDown);
+            tile.addEventListener('dragstart', handleDragStart); // Prevent default drag
+            tile.addEventListener('dblclick', handleDoubleClick);
+            
+            // Touch events
+            tile.addEventListener('touchstart', handleTouchStart, { passive: false });
+            tile.addEventListener('touchmove', handleTouchMove, { passive: false });
+            tile.addEventListener('touchend', handleTouchEnd, { passive: false });
+            
+            updateTilePosition(tile, row, col);
+            
+            return tile;
+        }
+
+        function initGame() {
+            const gridElement = document.getElementById('deskGrid');
+            gridElement.innerHTML = '';
+            tiles = [];
+            emptySpaces = [];
+            moves = 0;
+            updateMoveCount();
+            
+            initGrid();
+
+            // Place 2 adjacent empty spaces first
+            const emptyRow = Math.floor(Math.random() * ROWS);
+            const emptyCol = Math.floor(Math.random() * (COLS - 1));
+            markGridSpace(emptyRow, emptyCol, 2, 1, 'empty');
+            emptySpaces.push({ row: emptyRow, col: emptyCol });
+            emptySpaces.push({ row: emptyRow, col: emptyCol + 1 });
+
+            // Place 2 more random empty spaces
+            for (let i = 0; i < 2; i++) {
+                const pos = findRandomPlacement(1, 1);
+                if (pos) {
+                    markGridSpace(pos.row, pos.col, 1, 1, 'empty');
+                    emptySpaces.push(pos);
+                }
+            }
+
+            // Place 1 tile that is 1x3
+            const pos1x3 = findRandomPlacement(1, 3);
+            if (pos1x3) {
+                const tile = createTile(pos1x3.row, pos1x3.col, 1, 3, getRandomObject(1, 3));
+                gridElement.appendChild(tile);
+                tiles.push({ element: tile, row: pos1x3.row, col: pos1x3.col, width: 1, height: 3 });
+                markGridSpace(pos1x3.row, pos1x3.col, 1, 3, true);
+            }
+
+            // Place 3 tiles that are 2x2
+            for (let i = 0; i < 3; i++) {
+                const pos = findRandomPlacement(2, 2);
+                if (pos) {
+                    const tile = createTile(pos.row, pos.col, 2, 2, getRandomObject(2, 2));
+                    gridElement.appendChild(tile);
+                    tiles.push({ element: tile, row: pos.row, col: pos.col, width: 2, height: 2 });
+                    markGridSpace(pos.row, pos.col, 2, 2, true);
+                }
+            }
+
+            // Place 6 tiles that are 1x2
+            for (let i = 0; i < 6; i++) {
+                const pos = findRandomPlacement(1, 2);
+                if (pos) {
+                    const tile = createTile(pos.row, pos.col, 1, 2, getRandomObject(1, 2));
+                    gridElement.appendChild(tile);
+                    tiles.push({ element: tile, row: pos.row, col: pos.col, width: 1, height: 2 });
+                    markGridSpace(pos.row, pos.col, 1, 2, true);
+                }
+            }
+
+            // Fill remaining spaces with 1x1 tiles
+            for (let row = 0; row < ROWS; row++) {
+                for (let col = 0; col < COLS; col++) {
+                    if (!grid[row][col]) {
+                        const tile = createTile(row, col, 1, 1, getRandomObject(1, 1));
+                        gridElement.appendChild(tile);
+                        tiles.push({ element: tile, row: row, col: col, width: 1, height: 1 });
+                        markGridSpace(row, col, 1, 1, true);
+                    }
+                }
+            }
+        }
+
+        function updateTilePosition(tile, row, col) {
+            const x = col * (TILE_SIZE + GAP);
+            const y = row * (TILE_SIZE + GAP);
+            tile.style.left = x + 'px';
+            tile.style.top = y + 'px';
+            tile.dataset.row = row;
+            tile.dataset.col = col;
+        }
+
+        function handleDragStart(e) {
+            e.preventDefault(); // Prevent default drag behavior
+        }
+
+        function handleMouseDown(e) {
+            draggedTile = e.target;
+            isDragging = true;
+            dragStartX = e.clientX;
+            dragStartY = e.clientY;
+            draggedTile.classList.add('dragging');
+            
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mouseup', handleMouseUp);
+        }
+
+        function handleMouseMove(e) {
+            if (!isDragging || !draggedTile) return;
+            
+            const deltaX = e.clientX - dragStartX;
+            const deltaY = e.clientY - dragStartY;
+            
+            // Apply transform to show dragging feedback
+            draggedTile.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+        }
+
+        function handleMouseUp(e) {
+            if (!isDragging || !draggedTile) return;
+            
+            const deltaX = e.clientX - dragStartX;
+            const deltaY = e.clientY - dragStartY;
+            const threshold = 10; // Minimum drag distance to register direction
+            
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+            
+            const tileRow = parseInt(draggedTile.dataset.row);
+            const tileCol = parseInt(draggedTile.dataset.col);
+            const tileWidth = parseInt(draggedTile.dataset.width);
+            const tileHeight = parseInt(draggedTile.dataset.height);
+            
+            // Determine drag direction based on total movement from start to end
+            let direction = null;
+            let moved = false;
+            
+            const absDeltaX = Math.abs(deltaX);
+            const absDeltaY = Math.abs(deltaY);
+            
+            // If dragged beyond threshold in any direction
+            if (absDeltaX > threshold || absDeltaY > threshold) {
+                // Determine primary and secondary directions
+                let primaryDir, secondaryDir;
+                
+                if (absDeltaX > absDeltaY) {
+                    primaryDir = deltaX > 0 ? 'right' : 'left';
+                    secondaryDir = deltaY > 0 ? 'down' : 'up';
+                } else {
+                    primaryDir = deltaY > 0 ? 'down' : 'up';
+                    secondaryDir = deltaX > 0 ? 'right' : 'left';
+                }
+                
+                // Try primary direction first
+                let validMove = canMoveInDirection(tileRow, tileCol, tileWidth, tileHeight, primaryDir);
+                if (validMove) {
+                    direction = primaryDir;
+                } else if (absDeltaX > threshold && absDeltaY > threshold) {
+                    // If diagonal drag and primary blocked, try secondary
+                    validMove = canMoveInDirection(tileRow, tileCol, tileWidth, tileHeight, secondaryDir);
+                    if (validMove) {
+                        direction = secondaryDir;
+                    }
+                }
+            }
+            
+            // Try to move in the determined direction
+            if (direction) {
+                const validMove = canMoveInDirection(tileRow, tileCol, tileWidth, tileHeight, direction);
+                if (validMove) {
+                    // Reset transform before moving
+                    draggedTile.style.transform = '';
+                    moveTile(draggedTile, validMove.newRow, validMove.newCol, tileRow, tileCol, tileWidth, tileHeight);
+                    moved = true;
+                }
+            }
+            
+            // Only reset transform if move didn't happen
+            if (!moved) {
+                draggedTile.style.transform = '';
+            }
+            
+            draggedTile.classList.remove('dragging');
+            draggedTile = null;
+            isDragging = false;
+        }
+
+        function canMoveInDirection(tileRow, tileCol, tileWidth, tileHeight, direction) {
+            const dirMap = {
+                'up': { dr: -1, dc: 0 },
+                'down': { dr: 1, dc: 0 },
+                'left': { dr: 0, dc: -1 },
+                'right': { dr: 0, dc: 1 }
+            };
+            
+            const dir = dirMap[direction];
+            if (!dir) return null;
+            
+            const newRow = tileRow + dir.dr;
+            const newCol = tileCol + dir.dc;
+            
+            // Check if the new position is valid and all spaces are empty
+            if (newRow >= 0 && newRow + tileHeight <= ROWS && 
+                newCol >= 0 && newCol + tileWidth <= COLS) {
+                
+                let allEmpty = true;
+                for (let r = newRow; r < newRow + tileHeight; r++) {
+                    for (let c = newCol; c < newCol + tileWidth; c++) {
+                        // Skip checking the tile's current position
+                        if (r >= tileRow && r < tileRow + tileHeight &&
+                            c >= tileCol && c < tileCol + tileWidth) {
+                            continue;
+                        }
+                        
+                        const isEmpty = emptySpaces.some(empty => empty.row === r && empty.col === c);
+                        if (!isEmpty) {
+                            allEmpty = false;
+                            break;
+                        }
+                    }
+                    if (!allEmpty) break;
+                }
+                
+                if (allEmpty) {
+                    return { newRow, newCol };
+                }
+            }
+            
+            return null;
+        }
+
+        function canMoveToEmptySpace(tileRow, tileCol, tileWidth, tileHeight) {
+            // Check all four directions
+            const directions = [
+                { dr: -1, dc: 0, name: 'up' },
+                { dr: 1, dc: 0, name: 'down' },
+                { dr: 0, dc: -1, name: 'left' },
+                { dr: 0, dc: 1, name: 'right' }
+            ];
+
+            for (const dir of directions) {
+                const newRow = tileRow + dir.dr;
+                const newCol = tileCol + dir.dc;
+                
+                // Check if the new position is valid and all spaces are empty
+                if (newRow >= 0 && newRow + tileHeight <= ROWS && 
+                    newCol >= 0 && newCol + tileWidth <= COLS) {
+                    
+                    let allEmpty = true;
+                    for (let r = newRow; r < newRow + tileHeight; r++) {
+                        for (let c = newCol; c < newCol + tileWidth; c++) {
+                            // Skip checking the tile's current position
+                            if (r >= tileRow && r < tileRow + tileHeight &&
+                                c >= tileCol && c < tileCol + tileWidth) {
+                                continue;
+                            }
+                            
+                            const isEmpty = emptySpaces.some(empty => empty.row === r && empty.col === c);
+                            if (!isEmpty) {
+                                allEmpty = false;
+                                break;
+                            }
+                        }
+                        if (!allEmpty) break;
+                    }
+                    
+                    if (allEmpty) {
+                        return { newRow, newCol };
+                    }
+                }
+            }
+            
+            return null;
+        }
+
+        function moveTile(tile, newRow, newCol, oldRow, oldCol, width, height) {
+            tile.classList.add('sliding');
+            
+            updateTilePosition(tile, newRow, newCol);
+            
+            // Update tile data
+            const tileData = tiles.find(t => t.element === tile);
+            if (tileData) {
+                tileData.row = newRow;
+                tileData.col = newCol;
+            }
+            
+            // Update empty spaces
+            const newEmptySpaces = [];
+            
+            // Add old tile positions as empty
+            for (let r = oldRow; r < oldRow + height; r++) {
+                for (let c = oldCol; c < oldCol + width; c++) {
+                    newEmptySpaces.push({ row: r, col: c });
+                }
+            }
+            
+            // Keep empty spaces that aren't covered by the new tile position
+            for (const empty of emptySpaces) {
+                const coveredByNewPos = empty.row >= newRow && empty.row < newRow + height &&
+                                       empty.col >= newCol && empty.col < newCol + width;
+                const wasOldTilePos = empty.row >= oldRow && empty.row < oldRow + height &&
+                                     empty.col >= oldCol && empty.col < oldCol + width;
+                
+                if (!coveredByNewPos && !wasOldTilePos) {
+                    newEmptySpaces.push(empty);
+                }
+            }
+            
+            emptySpaces = newEmptySpaces;
+            
+            moves++;
+            updateMoveCount();
+            
+            setTimeout(() => {
+                tile.classList.remove('sliding');
+            }, 250);
+        }
+
+        function updateMoveCount() {
+            document.getElementById('moveCount').textContent = moves;
+        }
+
+        function resetGame() {
+            initGame();
+        }
+
+        // Dynamic tile sizing for mobile devices
+        function adjustTileSize() {
+            const viewport = window.visualViewport || {
+                width: window.innerWidth,
+                height: window.innerHeight
+            };
+            
+            const availableWidth = viewport.width - 40; // Account for padding
+            const availableHeight = viewport.height - 200; // Account for header, counter, button
+            
+            // Calculate tile size based on grid (13 cols x 6 rows)
+            const maxTileByWidth = Math.floor(availableWidth / 13.5); // Account for gaps
+            const maxTileByHeight = Math.floor(availableHeight / 6.3); // Account for gaps
+            
+            const optimalTileSize = Math.min(maxTileByWidth, maxTileByHeight, 70); // Max 70px
+            const finalTileSize = Math.max(optimalTileSize, 20); // Min 20px
+            
+            document.documentElement.style.setProperty('--tile-size', finalTileSize + 'px');
+            
+            // Adjust gap proportionally
+            const gap = Math.max(1, Math.floor(finalTileSize / 20));
+            document.documentElement.style.setProperty('--grid-gap', gap + 'px');
+            
+            // Scale emoji font sizes based on tile size
+            // Make emojis larger - about 85% of tile size for better visibility
+            const baseFontSize = finalTileSize * 0.85;
+            const font1x1 = baseFontSize;
+            const font1x2 = baseFontSize;
+            const font2x2 = baseFontSize * 1.3; // Even larger for bigger tiles
+            const font1x3 = baseFontSize * 1.2;
+            
+            document.documentElement.style.setProperty('--font-1x1', font1x1 + 'px');
+            document.documentElement.style.setProperty('--font-1x2', font1x2 + 'px');
+            document.documentElement.style.setProperty('--font-2x2', font2x2 + 'px');
+            document.documentElement.style.setProperty('--font-1x3', font1x3 + 'px');
+            
+            // Update constants for position calculations
+            TILE_SIZE = finalTileSize;
+            GAP = gap;
+            
+            // Reposition all existing tiles if they exist
+            if (tiles.length > 0) {
+                tiles.forEach(tileData => {
+                    updateTilePosition(tileData.element, tileData.row, tileData.col);
+                });
+            }
+        }
+        
+        // Adjust size first, then initialize
+        adjustTileSize();
+        initGame();
+        
+        window.addEventListener('resize', adjustTileSize);
+        window.addEventListener('orientationchange', () => {
+            setTimeout(adjustTileSize, 100);
+        });
+        
+        // Register service worker for PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./service-worker.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registered:', registration);
+                    })
+                    .catch(error => {
+                        console.log('ServiceWorker registration failed:', error);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>
